@@ -15,9 +15,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder encoder;
 
     public AuthServiceImpl(UserDetailsManager manager,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder encoder) {
         this.manager = manager;
-        this.encoder = passwordEncoder;
+        this.encoder = encoder;
     }
 
     @Override
