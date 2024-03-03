@@ -13,5 +13,6 @@ public class Login {
     @NotBlank
     @Size(min = 4, max = 16, message = "Пароль должен быть в диапозоне от 4 до 16 символов!")
     private String password;
-    private String confirmPassword;
+
+
 }
