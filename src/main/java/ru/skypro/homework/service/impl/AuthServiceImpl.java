@@ -6,42 +6,61 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.stereotype.Service;
 import ru.skypro.homework.dto.Register;
+import ru.skypro.homework.mapper.UserMapper;
+import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.AuthService;
+import ru.skypro.homework.service.UserServiceConfig;
 
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private final UserDetailsManager manager;
+    private final UserServiceConfig userServiceConfig;
     private final PasswordEncoder encoder;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public AuthServiceImpl(UserDetailsManager manager,
-                           PasswordEncoder encoder) {
-        this.manager = manager;
-        this.encoder = encoder;
+    public AuthServiceImpl(UserServiceConfig userServiceConfig,
+                           PasswordEncoder passwordEncoder,
+                           UserRepository userRepository,
+                           UserMapper userMapper) {
+        this.userServiceConfig = userServiceConfig;
+        this.encoder = passwordEncoder;
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
+    /**
+     * Метод для логирования.
+     * @param userName username пользователя.
+     * @param password пароль пользователя.
+     * @return true, если логирование прошло успешно, в противном случае возвращается false.
+     */
     @Override
     public boolean login(String userName, String password) {
-        if (!manager.userExists(userName)) {
+        if (userServiceConfig.findByUsername(userName).isEmpty()) {
             return false;
         }
-        UserDetails userDetails = manager.loadUserByUsername(userName);
+        UserDetails userDetails = userServiceConfig.loadUserByUsername(userName);
         return encoder.matches(password, userDetails.getPassword());
     }
 
+    /**
+     * Метод для регистрации нового пользователя, пользователь сохраняется в таблице user.
+     * Для проверки наличия пользователя в таблице user используется
+     * метод {@link UserServiceConfig#findByUsername(String)}.
+     * Происходит кодировка пароля пользователя с помощью бина PasswordEncoder.
+     * @param register Dto Register.
+     * @return true, если пользователь отсутствует в таблице user, в противном случае возвращается false.
+     */
     @Override
     public boolean register(Register register) {
-        if (manager.userExists(register.getUsername())) {
+        if (userServiceConfig.findByUsername(register.getUsername()).isPresent()) {
             return false;
         }
-        manager.createUser(
-                User.builder()
-                        .passwordEncoder(this.encoder::encode)
-                        .password(register.getPassword())
-                        .username(register.getUsername())
-                        .roles(register.getRole().name())
-                        .build());
+        register.setPassword(encoder.encode(register.getPassword()));
+        userRepository.save(userMapper.registerToUser(register));
         return true;
     }
+
 
 }

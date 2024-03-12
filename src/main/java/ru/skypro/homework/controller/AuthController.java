@@ -22,7 +22,7 @@ public class AuthController {
     private final AuthService authService;
 
 
-    @PostMapping("/login")
+    @PostMapping("login")
     public ResponseEntity<?> login(@RequestBody Login login) {
         if (authService.login(login.getUsername(), login.getPassword())) {
             return ResponseEntity.ok().build();
@@ -31,7 +31,7 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/register")
+    @PostMapping("register")
     public ResponseEntity<?> register(@RequestBody Register register) {
         if (authService.register(register)) {
             return ResponseEntity.status(HttpStatus.CREATED).build();

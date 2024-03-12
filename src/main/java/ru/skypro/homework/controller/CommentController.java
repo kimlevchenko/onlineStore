@@ -2,41 +2,62 @@ package ru.skypro.homework.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ru.skypro.homework.dto.Comment;
+import ru.skypro.homework.dto.Comments;
+import ru.skypro.homework.dto.CreateOrUpdateComment;
+import ru.skypro.homework.service.CommentService;
 
-import java.util.List;
+import java.security.Principal;
+
 
 @RestController
-@RequestMapping("/ads/{adId}/comments")
+@RequestMapping("ads")
 @CrossOrigin(value = "http://localhost:3000")
 public class CommentController {
 
-    private static final Logger logger = LoggerFactory.getLogger(CommentController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommentController.class);
 
-    @GetMapping()
-    public ResponseEntity<?> getComments(@PathVariable int adId) {
-        logger.info("The get all ad comments method is called.");
-        return ResponseEntity.ok(List.of(new Comment()));
+    private final CommentService commentService;
+
+    public CommentController(CommentService commentService) {
+        this.commentService = commentService;
     }
 
-    @PostMapping("/{commentId}")
-    public ResponseEntity<?> addComment(@PathVariable int adId, @PathVariable int commentId, String text) {
-        logger.info("The comment creation method is called.");
-        return ResponseEntity.ok(new Comment());
+    @GetMapping("{adId}/comments")
+    public ResponseEntity<Comments> getComments(@PathVariable Integer adId){
+        LOGGER.info("The get all ad comments method is called.");
+        return ResponseEntity.ok(commentService.findComments(adId));
     }
 
-    @PatchMapping("/{commentId}")
-    public ResponseEntity<?> updateComment(@PathVariable int adId, @PathVariable int commentId, String text) {
-        logger.info("The comment update method is called.");
-        return ResponseEntity.ok(new Comment());
+    @PostMapping("{adId}/comments")
+    public ResponseEntity<Comment> addComment(@PathVariable Integer adId,
+                                              @RequestBody CreateOrUpdateComment comment,
+                                              Principal principal){
+        String currentUserName = principal.getName();
+        LOGGER.info("The comment creation method is called by user " + currentUserName);
+        return ResponseEntity.ok(commentService.createComment(adId, comment, currentUserName));
     }
 
-    @DeleteMapping("/{commentId}")
-    public ResponseEntity<?> deleteComment(@PathVariable int adId, @PathVariable int commentId) {
-        logger.info("The comment delete method is called.");
-        return ResponseEntity.ok(new Comment());
+    @PatchMapping("{adId}/comments/{commentId}")
+    @PreAuthorize("hasRole('ADMIN') or @CheckUserService.getUsernameByComment(#commentId) == principal.username")
+    public ResponseEntity<Comment> updateComment(@PathVariable Integer adId,
+                                                 @PathVariable Integer commentId,
+                                                 @RequestBody CreateOrUpdateComment comment,
+                                                 Principal principal){
+        LOGGER.info("The comment update method is called.");
+        return ResponseEntity.ok(commentService.updateComment(adId, commentId, comment, principal.getName()));
     }
 
+    @DeleteMapping("{adId}/comments/{commentId}")
+    @PreAuthorize("hasRole('ADMIN') or @CheckUserService.getUsernameByComment(#commentId) == principal.username")
+    public ResponseEntity<?> deleteComment(@PathVariable Integer adId,
+                                           @PathVariable Integer commentId){
+        LOGGER.info("The comment delete method is called.");
+        commentService.deleteComment(adId, commentId);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
 }
