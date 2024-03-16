@@ -28,4 +28,3 @@ Java 11, Spring Boot + Spring Security / Web, PostgreSQL, Liquibase.
 - [Ким Левченко](https://github.com/kimlevchenko)
 - [Александр Лиханов](https://github.com/Alexlikhanov2011)
 - [Елена Ермолаева](https://github.com/elena161284)
-- [Светлана Брюховецкая](https://github.com/dabich626626)
